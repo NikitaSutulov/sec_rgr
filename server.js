@@ -14,6 +14,7 @@ const server = net.createServer((socket) => {
     let serverRandom = crypto.randomBytes(16).toString('hex');
     let premasterSecret = '';
     let sessionKey = '';
+    let isClientReady = false;
 
     socket.on('data', (data) => {
         const message = JSON.parse(data.toString());
@@ -43,6 +44,22 @@ const server = net.createServer((socket) => {
 
             sessionKey = crypto.createHash('sha256').update(clientRandom + serverRandom + premasterSecret).digest();
             console.log('Generated the session key (printing in base64 encoding): ' + sessionKey.toString('base64'));
+
+            const cipher = crypto.createCipheriv('aes-256-ecb', sessionKey, null);
+            cipher.setAutoPadding(true);
+            const encryptedReady = cipher.update('ready', 'utf8', 'hex') + cipher.final('hex');
+
+            socket.write(JSON.stringify({ type: 'ready', message: encryptedReady }));
+            console.log('Sent ready message to the client.');
+        } else if (message.type === 'ready') {
+            const decipher = crypto.createDecipheriv('aes-256-ecb', sessionKey, null);
+            decipher.setAutoPadding(true);
+            const decryptedReady = decipher.update(message.message, 'hex', 'utf8') + decipher.final('utf8');
+
+            if (decryptedReady === 'ready') {
+                console.log('Received ready message from the client.');
+                isClientReady = true;
+            }
         }
     });
 });

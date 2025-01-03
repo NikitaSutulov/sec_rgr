@@ -39,6 +39,23 @@ client.on('data', (data) => {
 
         sessionKey = crypto.createHash('sha256').update(clientRandom + serverRandom + premasterSecret).digest();
         console.log('Generated the session key (printing in base64 encoding): ' + sessionKey.toString('base64'));
+
+
+    } else if (message.type === 'ready') {
+        const decipher = crypto.createDecipheriv('aes-256-ecb', sessionKey, null);
+        decipher.setAutoPadding(true);
+        const decryptedReady = decipher.update(message.message, 'hex', 'utf8') + decipher.final('utf8');
+
+        if (decryptedReady === 'ready') {
+            console.log('Received ready message from the server.');
+
+            const readyCipher = crypto.createCipheriv('aes-256-ecb', sessionKey, null);
+            readyCipher.setAutoPadding(true);
+            const encryptedReady = readyCipher.update('ready', 'utf8', 'hex') + readyCipher.final('hex');
+
+            client.write(JSON.stringify({ type: 'ready', message: encryptedReady }));
+            console.log('Sent ready message to the server.');
+        }
     }
 });
 
