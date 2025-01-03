@@ -12,6 +12,7 @@ const server = net.createServer((socket) => {
 
     let clientRandom = '';
     let serverRandom = crypto.randomBytes(16).toString('hex');
+    let premasterSecret = '';
 
     socket.on('data', (data) => {
         const message = JSON.parse(data.toString());
@@ -30,6 +31,14 @@ const server = net.createServer((socket) => {
             );
             console.log('Sent server hello to the client with random: ' + serverRandom);
             console.log('Public key:\n' + serverPublicKeyPem);
+        } else if (message.type === 'premasterSecret') {
+            console.log('Received encrypted premasterSecret from the client.');
+            const decryptedPremaster = crypto.privateDecrypt(
+                serverPrivateKey,
+                Buffer.from(message.premaster, 'base64')
+            );
+            premasterSecret = decryptedPremaster.toString('hex');
+            console.log('Decrypted premasterSecret: ' + premasterSecret);
         }
     });
 });

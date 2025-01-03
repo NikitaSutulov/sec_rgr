@@ -11,6 +11,7 @@ const client = net.createConnection({ port: 8080 }, () => {
 
 let serverRandom = '';
 let serverPublicKey = '';
+let premasterSecret = '';
 
 client.on('data', (data) => {
     const message = JSON.parse(data.toString());
@@ -20,6 +21,20 @@ client.on('data', (data) => {
         console.log('Received server hello from the server with random: ' + serverRandom);
         serverPublicKey = message.publicKey;
         console.log('Public key:\n' + serverPublicKey);
+
+        premasterSecret = crypto.randomBytes(16).toString('hex');
+        console.log('Premaster secret without encryption: ' + premasterSecret);
+        const encryptedPremaster = crypto.publicEncrypt(
+            serverPublicKey,
+            Buffer.from(premasterSecret, 'hex')
+        );
+        client.write(
+            JSON.stringify({
+                type: 'premasterSecret',
+                premaster: encryptedPremaster.toString('base64'),
+            })
+        );
+        console.log('Sent encrypted premaster secret to the server.');
     }
 });
 
