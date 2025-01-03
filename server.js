@@ -13,6 +13,7 @@ const server = net.createServer((socket) => {
     let clientRandom = '';
     let serverRandom = crypto.randomBytes(16).toString('hex');
     let premasterSecret = '';
+    let sessionKey = '';
 
     socket.on('data', (data) => {
         const message = JSON.parse(data.toString());
@@ -39,6 +40,9 @@ const server = net.createServer((socket) => {
             );
             premasterSecret = decryptedPremaster.toString('hex');
             console.log('Decrypted premasterSecret: ' + premasterSecret);
+
+            sessionKey = crypto.createHash('sha256').update(clientRandom + serverRandom + premasterSecret).digest();
+            console.log('Generated the session key (printing in base64 encoding): ' + sessionKey.toString('base64'));
         }
     });
 });

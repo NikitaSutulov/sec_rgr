@@ -12,6 +12,7 @@ const client = net.createConnection({ port: 8080 }, () => {
 let serverRandom = '';
 let serverPublicKey = '';
 let premasterSecret = '';
+let sessionKey = '';
 
 client.on('data', (data) => {
     const message = JSON.parse(data.toString());
@@ -35,6 +36,9 @@ client.on('data', (data) => {
             })
         );
         console.log('Sent encrypted premaster secret to the server.');
+
+        sessionKey = crypto.createHash('sha256').update(clientRandom + serverRandom + premasterSecret).digest();
+        console.log('Generated the session key (printing in base64 encoding): ' + sessionKey.toString('base64'));
     }
 });
 
