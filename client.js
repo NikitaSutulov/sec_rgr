@@ -39,8 +39,6 @@ client.on('data', (data) => {
 
         sessionKey = crypto.createHash('sha256').update(clientRandom + serverRandom + premasterSecret).digest();
         console.log('Generated the session key (printing in base64 encoding): ' + sessionKey.toString('base64'));
-
-
     } else if (message.type === 'ready') {
         const decipher = crypto.createDecipheriv('aes-256-ecb', sessionKey, null);
         decipher.setAutoPadding(true);
@@ -55,7 +53,16 @@ client.on('data', (data) => {
 
             client.write(JSON.stringify({ type: 'ready', message: encryptedReady }));
             console.log('Sent ready message to the server.');
+
+            const cipher = crypto.createCipheriv('aes-256-ecb', sessionKey, null);
+            const encryptedData = cipher.update('This text has been sent through the secure channel.', 'utf8', 'hex') + cipher.final('hex');
+            client.write(JSON.stringify({ type: 'text', data: encryptedData }));
+            console.log('Sent encrypted text data to the server.');
         }
+    } else if (message.type === 'text') {
+        const decipher = crypto.createDecipheriv('aes-256-ecb', sessionKey, null);
+        const decryptedData = decipher.update(message.data, 'hex', 'utf8') + decipher.final('utf8');
+        console.log('Received and decrypted the text data: ' + decryptedData);
     }
 });
 

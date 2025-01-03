@@ -60,6 +60,15 @@ const server = net.createServer((socket) => {
                 console.log('Received ready message from the client.');
                 isClientReady = true;
             }
+        } else if (message.type === 'text' && isClientReady) {
+            const decipher = crypto.createDecipheriv('aes-256-ecb', sessionKey, null);
+            const decryptedData = decipher.update(message.data, 'hex', 'utf8') + decipher.final('utf8');
+            console.log('Received and decrypted the text data: ' + decryptedData);
+
+            const cipher = crypto.createCipheriv('aes-256-ecb', sessionKey, null);
+            const encryptedData = cipher.update('This is a reply from the server sent through the secure channel.', 'utf8', 'hex') + cipher.final('hex');
+            socket.write(JSON.stringify({ type: 'text', data: encryptedData }));
+            console.log('Sent encrypted text data to the client.');
         }
     });
 });
