@@ -1,5 +1,6 @@
 const net = require('net');
 const crypto = require('crypto');
+const fs = require('fs');
 
 const serverKeyPair = crypto.generateKeyPairSync('rsa', {
     modulusLength: 2048,
@@ -69,6 +70,11 @@ const server = net.createServer((socket) => {
             const encryptedData = cipher.update('This is a reply from the server sent through the secure channel.', 'utf8', 'hex') + cipher.final('hex');
             socket.write(JSON.stringify({ type: 'text', data: encryptedData }));
             console.log('Sent encrypted text data to the client.');
+        } else if (message.type === 'file' && isClientReady) {
+            const decipher = crypto.createDecipheriv('aes-256-ecb', sessionKey, null);
+            const decryptedFileContent = decipher.update(message.data, 'hex', 'utf8') + decipher.final('utf8');
+            fs.writeFileSync('output.txt', decryptedFileContent, 'utf8');
+            console.log('Received and decrypted the file data, look for it in output.txt');
         }
     });
 });

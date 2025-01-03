@@ -131,3 +131,6 @@ dist
 
 # IDEA
 .idea/
+
+# File output
+output.txt

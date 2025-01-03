@@ -1,5 +1,6 @@
 const net = require('net');
 const crypto = require('crypto');
+const fs = require('fs');
 
 const clientRandom = crypto.randomBytes(16).toString('hex');
 
@@ -63,6 +64,13 @@ client.on('data', (data) => {
         const decipher = crypto.createDecipheriv('aes-256-ecb', sessionKey, null);
         const decryptedData = decipher.update(message.data, 'hex', 'utf8') + decipher.final('utf8');
         console.log('Received and decrypted the text data: ' + decryptedData);
+
+        const fileContent = fs.readFileSync('input.txt').toString('utf8');
+        const fileCipher = crypto.createCipheriv('aes-256-ecb', sessionKey, null);
+        fileCipher.setAutoPadding(true);
+        const encryptedFileContent = fileCipher.update(fileContent, 'utf8', 'hex') + fileCipher.final('hex');
+        client.write(JSON.stringify({ type: 'file', data: encryptedFileContent }));
+        console.log('Sent encrypted input.txt to the server.');
     }
 });
 
